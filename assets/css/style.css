@@ -1,0 +1,47 @@
+:root {
+    --primary-blue: #0a4d8c;
+    --secondary-blue: #1f6db4;
+    --light-blue: #eaf4ff;
+    --white: #ffffff;
+    --text-dark: #243447;
+}
+
+body {
+    background: linear-gradient(180deg, #f6fbff 0%, #eaf4ff 100%);
+    color: var(--text-dark);
+}
+
+.brand-gradient {
+    background: linear-gradient(135deg, var(--primary-blue), var(--secondary-blue));
+}
+
+.sidebar {
+    min-height: 100vh;
+    background: var(--primary-blue);
+}
+
+.sidebar .nav-link {
+    color: #d9ebff;
+    border-radius: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+    background: rgba(255, 255, 255, 0.15);
+    color: #fff;
+}
+
+.card-shadow {
+    box-shadow: 0 10px 24px rgba(10, 77, 140, 0.12);
+    border: none;
+}
+
+.book-card img {
+    height: 220px;
+    object-fit: cover;
+}
+
+.login-wrapper {
+    min-height: 100vh;
+}
