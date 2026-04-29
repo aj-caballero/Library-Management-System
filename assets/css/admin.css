@@ -10,21 +10,21 @@
 
 :root {
     /* Brand */
-    --brand-50:  #eff6ff;
-    --brand-100: #dbeafe;
-    --brand-200: #bfdbfe;
-    --brand-400: #60a5fa;
-    --brand-500: #3b82f6;
-    --brand-600: #2563eb;
-    --brand-700: #1d4ed8;
-    --brand-800: #1e40af;
-    --brand-900: #1e3a8a;
+    --brand-50:  #edf5e1;
+    --brand-100: #d8f3dc;
+    --brand-200: #b7e4c7;
+    --brand-400: #74c69d;
+    --brand-500: #52b788;
+    --brand-600: #40916c;
+    --brand-700: #2d6a4f;
+    --brand-800: #1b4332;
+    --brand-900: #0d3b1f;
 
     /* Sidebar */
-    --sidebar-bg:       #0f172a;
-    --sidebar-border:   #1e293b;
-    --sidebar-hover:    #1e293b;
-    --sidebar-active:   #1e40af;
+    --sidebar-bg:       #0d3b1f;
+    --sidebar-border:   #1b4332;
+    --sidebar-hover:    #2d6a4f;
+    --sidebar-active:   #40916c;
     --sidebar-text:     #94a3b8;
     --sidebar-text-act: #f1f5f9;
     --sidebar-icon:     #64748b;
@@ -59,7 +59,7 @@
 
     /* Forms */
     --input-border: #cbd5e1;
-    --input-focus:  #3b82f6;
+    --input-focus:  #52b788;
     --input-radius: 8px;
 }
 
@@ -120,7 +120,7 @@ body {
     font-weight: 800;
     letter-spacing: .03em;
     color: #fff;
-    box-shadow: 0 4px 12px rgba(59,130,246,.35);
+    box-shadow: 0 4px 12px rgba(82,183,136,.35);
 }
 .sidebar-brand-text {
     line-height: 1.2;
@@ -467,9 +467,9 @@ body {
 .btn-primary {
     background: var(--brand-600);
     color: #fff;
-    box-shadow: 0 2px 6px rgba(37,99,235,.35);
+    box-shadow: 0 2px 6px rgba(64,145,108,.35);
 }
-.btn-primary:hover { background: var(--brand-700); box-shadow: 0 4px 12px rgba(37,99,235,.4); color: #fff; }
+.btn-primary:hover { background: var(--brand-700); box-shadow: 0 4px 12px rgba(64,145,108,.4); color: #fff; }
 
 .btn-secondary {
     background: #f1f5f9;
@@ -542,7 +542,7 @@ body {
 }
 .form-control:focus, .form-select:focus {
     border-color: var(--input-focus);
-    box-shadow: 0 0 0 3px rgba(59,130,246,.12);
+    box-shadow: 0 0 0 3px rgba(82,183,136,.12);
 }
 .form-control-sm { padding: 6px 10px; font-size: .78rem; border-radius: 6px; }
 .form-select-sm  { padding: 6px 10px; font-size: .78rem; border-radius: 6px; }

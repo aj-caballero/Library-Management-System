@@ -4,12 +4,8 @@ $settings = $pdo->query('SELECT system_name, school_name, logo_path FROM system_
 <nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top">
     <div class="container-fluid">
         <a class="navbar-brand d-flex align-items-center gap-2" href="dashboard.php">
-            <?php if (!empty($settings['logo_path'])): ?>
-                <img src="/Library Management System/uploads/covers/<?php echo e($settings['logo_path']); ?>" width="34" height="34" class="rounded" alt="Logo">
-            <?php else: ?>
-                <span class="badge brand-gradient">PNHS</span>
-            <?php endif; ?>
-            <span><?php echo e($settings['system_name'] ?? 'Online Library System'); ?></span>
+            <img src="/Library Management System/assets/images/SchoolLogo.png" width="40" height="40" alt="School Logo">
+            <span><?php echo e($settings['system_name'] ?? 'Online Library'); ?></span>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#studentNav" aria-controls="studentNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>

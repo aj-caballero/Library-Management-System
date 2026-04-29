@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/config/auth.php';
+require_once __DIR__ . '/config/otp.php';
 
 $success = '';
 $error = '';
@@ -14,10 +15,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $fullname = trim((string) ($_POST['fullname'] ?? ''));
     $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL) ?: '';
+    $lrn = trim((string) ($_POST['lrn'] ?? ''));
     $password = (string) ($_POST['password'] ?? '');
     $gradeLevel = trim((string) ($_POST['grade_level'] ?? ''));
 
-    if ($error === '' && ($fullname === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) < 8 || $gradeLevel === '')) {
+    if ($error === '' && ($fullname === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) < 8 || $gradeLevel === '' || !preg_match('/^\d{12}$/', $lrn))) {
         $error = 'Please fill out all fields. Password must be at least 8 characters.';
     } elseif ($error === '') {
         $checkStmt = $pdo->prepare('SELECT id FROM users WHERE email = :email LIMIT 1');
@@ -26,18 +28,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($checkStmt->fetch()) {
             $error = 'Email is already registered.';
         } else {
+            // Generate OTP and hash password
+            $otp = generateOTP();
             $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-            $insertStmt = $pdo->prepare('INSERT INTO users (fullname, email, password, grade_level, role, created_at) VALUES (:fullname, :email, :password, :grade_level, :role, NOW())');
-            $insertStmt->execute([
-                ':fullname' => $fullname,
-                ':email' => $email,
-                ':password' => $hashedPassword,
-                ':grade_level' => $gradeLevel,
-                ':role' => 'student',
-            ]);
 
-            $success = 'Registration successful. You can now log in.';
-            logSystemActivity($pdo, null, 'New student registration submitted');
+            // Save OTP verification record
+            if (saveOTPVerification($pdo, $email, $otp, $fullname, $lrn, $gradeLevel, $hashedPassword)) {
+                // Send OTP email
+                if (sendOTPEmail($email, $otp, $fullname)) {
+                    // Redirect to OTP verification page
+                    $_SESSION['otp_email'] = $email;
+                    redirect('/Library Management System/verify-otp.php');
+                } else {
+                    $error = 'Failed to send verification email. Please try again.';
+                    // Clean up the OTP record if email failed
+                    clearOTP($pdo, $email);
+                }
+            } else {
+                $error = 'Failed to save registration. Please try again.';
+            }
         }
     }
 }
@@ -73,6 +82,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <input type="text" name="fullname" class="form-control" required>
                             </div>
                             <div class="mb-3">
+                                <label class="form-label">LRN (Learner Reference Number)</label>
+                                <input type="text" name="lrn" class="form-control" placeholder="Enter your 12-digit LRN" inputmode="numeric" maxlength="12" pattern="[0-9]{12}" title="LRN must be exactly 12 digits" required>
+                            </div>
+                            <div class="mb-3">
                                 <label class="form-label">Email</label>
                                 <input type="email" name="email" class="form-control" required>
                             </div>
@@ -90,7 +103,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <label class="form-label">Password</label>
                                 <input type="password" name="password" class="form-control" minlength="8" required>
                             </div>
-                            <button type="submit" class="btn btn-primary w-100">Create Account</button>
+                            <button type="submit" class="btn btn-primary w-100">Continue to Verification</button>
                         </form>
                         <div class="text-center mt-3">
                             <a href="/Library Management System/login.php">Back to login</a>

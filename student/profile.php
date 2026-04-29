@@ -6,7 +6,7 @@ require_once __DIR__ . '/../config/auth.php';
 ensureRole(['student']);
 
 $userId = (int) $_SESSION['user']['id'];
-$stmt = $pdo->prepare('SELECT id, fullname, email, grade_level FROM users WHERE id = :id LIMIT 1');
+$stmt = $pdo->prepare('SELECT id, fullname, email, lrn, grade_level FROM users WHERE id = :id LIMIT 1');
 $stmt->execute([':id' => $userId]);
 $user = $stmt->fetch();
 
@@ -20,10 +20,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $fullname = trim((string) ($_POST['fullname'] ?? ''));
     $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL) ?: '';
+    $lrn = trim((string) ($_POST['lrn'] ?? ''));
     $gradeLevel = trim((string) ($_POST['grade_level'] ?? ''));
     $newPassword = (string) ($_POST['new_password'] ?? '');
 
-    if ($error === '' && ($fullname === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || $gradeLevel === '')) {
+    if ($error === '' && ($fullname === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || $gradeLevel === '' || !preg_match('/^\d{12}$/', $lrn))) {
         $error = 'Please provide valid profile details.';
     } elseif ($error === '') {
         $check = $pdo->prepare('SELECT id FROM users WHERE email = :email AND id != :id LIMIT 1');
@@ -36,20 +37,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 if (strlen($newPassword) < 8) {
                     $error = 'New password must be at least 8 characters.';
                 } else {
-                    $update = $pdo->prepare('UPDATE users SET fullname = :fullname, email = :email, grade_level = :grade_level, password = :password WHERE id = :id');
+                    $update = $pdo->prepare('UPDATE users SET fullname = :fullname, email = :email, lrn = :lrn, grade_level = :grade_level, password = :password WHERE id = :id');
                     $update->execute([
                         ':fullname' => $fullname,
                         ':email' => $email,
+                        ':lrn' => $lrn,
                         ':grade_level' => $gradeLevel,
                         ':password' => password_hash($newPassword, PASSWORD_DEFAULT),
                         ':id' => $userId,
                     ]);
                 }
             } else {
-                $update = $pdo->prepare('UPDATE users SET fullname = :fullname, email = :email, grade_level = :grade_level WHERE id = :id');
+                $update = $pdo->prepare('UPDATE users SET fullname = :fullname, email = :email, lrn = :lrn, grade_level = :grade_level WHERE id = :id');
                 $update->execute([
                     ':fullname' => $fullname,
                     ':email' => $email,
+                    ':lrn' => $lrn,
                     ':grade_level' => $gradeLevel,
                     ':id' => $userId,
                 ]);
@@ -58,6 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($error === '') {
                 $_SESSION['user']['fullname'] = $fullname;
                 $_SESSION['user']['email'] = $email;
+                $_SESSION['user']['lrn'] = $lrn;
                 $_SESSION['user']['grade_level'] = $gradeLevel;
                 logSystemActivity($pdo, $userId, 'Updated student profile');
                 $success = 'Profile updated successfully.';
@@ -88,6 +92,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <form method="POST">
                 <?php echo csrfField(); ?>
                 <div class="mb-3"><label class="form-label">Full Name</label><input class="form-control" name="fullname" value="<?php echo e($user['fullname']); ?>" required></div>
+                <div class="mb-3"><label class="form-label">LRN (Learner Reference Number)</label><input class="form-control" name="lrn" value="<?php echo e($user['lrn']); ?>" inputmode="numeric" maxlength="12" pattern="[0-9]{12}" title="LRN must be exactly 12 digits" required></div>
                 <div class="mb-3"><label class="form-label">Email</label><input class="form-control" type="email" name="email" value="<?php echo e($user['email']); ?>" required></div>
                 <div class="mb-3"><label class="form-label">Grade Level</label>
                     <select class="form-select" name="grade_level" required>

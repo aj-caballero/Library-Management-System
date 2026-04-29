@@ -23,17 +23,23 @@ if (!$book) {
 
 $error   = '';
 $success = '';
+$selectedSubject = '';
+$newSubject      = '';
+
+$subjects = $pdo->query('SELECT DISTINCT subject FROM books ORDER BY subject ASC')->fetchAll(PDO::FETCH_COLUMN);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isValidCsrf($_POST['csrf_token'] ?? null)) {
         $error = 'Invalid session token. Please refresh and try again.';
     }
 
-    $title      = trim((string) ($_POST['title'] ?? ''));
-    $author     = trim((string) ($_POST['author'] ?? ''));
-    $subject    = trim((string) ($_POST['subject'] ?? ''));
-    $gradeLevel = trim((string) ($_POST['grade_level'] ?? ''));
-    $status     = trim((string) ($_POST['status'] ?? 'active'));
+    $title           = trim((string) ($_POST['title'] ?? ''));
+    $author          = trim((string) ($_POST['author'] ?? ''));
+    $selectedSubject = trim((string) ($_POST['subject'] ?? ''));
+    $newSubject      = trim((string) ($_POST['new_subject'] ?? ''));
+    $subject         = $selectedSubject === '__new__' ? $newSubject : $selectedSubject;
+    $gradeLevel      = trim((string) ($_POST['grade_level'] ?? ''));
+    $status          = trim((string) ($_POST['status'] ?? 'active'));
 
     if ($error === '' && ($title === '' || $author === '' || $subject === '' || $gradeLevel === '')) {
         $error = 'Please complete all required fields.';
@@ -139,11 +145,33 @@ adminPageStart('Edit Book', 'Administrator / Manage Books / Edit', $sidebarLinks
                 </div>
                 <div class="form-group">
                     <label class="form-label">Subject <span class="text-danger">*</span></label>
-                    <input class="form-control" name="subject" value="<?php echo e($book['subject']); ?>" required>
+                    <select class="form-select" name="subject" id="subjectSelect" required>
+                        <option value="">Select subject</option>
+                        <?php foreach ($subjects as $item): ?>
+                        <option value="<?php echo e((string) $item); ?>"
+                            <?php echo $book['subject'] === (string) $item ? 'selected' : ''; ?>>
+                            <?php echo e((string) $item); ?>
+                        </option>
+                        <?php endforeach; ?>
+                        <option value="__new__">
+                            Add new subject…
+                        </option>
+                    </select>
+                </div>
+                <div class="form-group" id="newSubjectWrap" style="display:none;">
+                    <label class="form-label">New Subject Name <span class="text-danger">*</span></label>
+                    <input class="form-control" id="newSubjectInput" name="new_subject"
+                           placeholder="Enter subject name">
                 </div>
                 <div class="form-group">
                     <label class="form-label">Grade Level <span class="text-danger">*</span></label>
-                    <input class="form-control" name="grade_level" value="<?php echo e($book['grade_level']); ?>" required>
+                    <select class="form-select" name="grade_level" required>
+                        <option value="">Select grade</option>
+                        <option value="Grade 7" <?php echo $book['grade_level'] === 'Grade 7' ? 'selected' : ''; ?>>Grade 7</option>
+                        <option value="Grade 8" <?php echo $book['grade_level'] === 'Grade 8' ? 'selected' : ''; ?>>Grade 8</option>
+                        <option value="Grade 9" <?php echo $book['grade_level'] === 'Grade 9' ? 'selected' : ''; ?>>Grade 9</option>
+                        <option value="Grade 10" <?php echo $book['grade_level'] === 'Grade 10' ? 'selected' : ''; ?>>Grade 10</option>
+                    </select>
                 </div>
                 <div class="form-group">
                     <label class="form-label">Status</label>
@@ -177,5 +205,22 @@ adminPageStart('Edit Book', 'Administrator / Manage Books / Edit', $sidebarLinks
         </form>
     </div>
 </div>
+
+<script>
+(function () {
+    var sel   = document.getElementById('subjectSelect');
+    var wrap  = document.getElementById('newSubjectWrap');
+    var input = document.getElementById('newSubjectInput');
+    if (!sel || !wrap || !input) return;
+    function toggle() {
+        var isNew = sel.value === '__new__';
+        wrap.style.display = isNew ? 'block' : 'none';
+        input.required     = isNew;
+        if (!isNew) input.value = '';
+    }
+    sel.addEventListener('change', toggle);
+    toggle();
+})();
+</script>
 
 <?php adminPageEnd(); ?>

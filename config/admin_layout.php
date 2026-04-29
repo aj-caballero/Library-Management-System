@@ -39,7 +39,10 @@ function adminPageStart(
 
 <aside class="admin-sidebar" id="adminSidebar">
     <a class="sidebar-brand" href="#">
-        <div class="sidebar-brand-icon">LMS</div>
+        <div class="sidebar-brand-icon">
+            <img src="/Library Management System/assets/images/SchoolLogo.png" alt="School Logo" 
+                 style="width: 100%; height: 100%; object-fit: contain;">
+        </div>
         <div class="sidebar-brand-text">
             <div class="sidebar-brand-title">LibraryMS</div>
             <div class="sidebar-brand-sub"><?php echo htmlspecialchars($sidebarRole, ENT_QUOTES); ?></div>

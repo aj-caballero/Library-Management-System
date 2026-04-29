@@ -1,14 +1,39 @@
 :root {
-    --primary-blue: #0a4d8c;
-    --secondary-blue: #1f6db4;
-    --light-blue: #eaf4ff;
+    --primary-blue: #1b4332;
+    --secondary-blue: #2d6a4f;
+    --light-blue: #d8f3dc;
     --white: #ffffff;
     --text-dark: #243447;
 }
 
 body {
-    background: linear-gradient(180deg, #f6fbff 0%, #eaf4ff 100%);
+    background: linear-gradient(180deg, #f1faee 0%, #d8f3dc 100%);
     color: var(--text-dark);
+}
+
+body.login-page {
+    position: relative;
+    background: url('/Library Management System/assets/images/SchoolBackground.jpg') center center / cover no-repeat fixed;
+    min-height: 100vh;
+}
+
+body.login-page::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(13, 59, 31, 0.72), rgba(27, 67, 50, 0.58));
+    z-index: 0;
+    pointer-events: none;
+}
+
+body.login-page .login-wrapper {
+    position: relative;
+    z-index: 1;
+}
+
+body.login-page .card-shadow {
+    backdrop-filter: blur(4px);
+    background: rgba(255, 255, 255, 0.92);
 }
 
 .brand-gradient {
@@ -21,7 +46,7 @@ body {
 }
 
 .sidebar .nav-link {
-    color: #d9ebff;
+    color: #b7e4c7;
     border-radius: 0.5rem;
     margin-bottom: 0.25rem;
 }
@@ -33,7 +58,7 @@ body {
 }
 
 .card-shadow {
-    box-shadow: 0 10px 24px rgba(10, 77, 140, 0.12);
+    box-shadow: 0 10px 24px rgba(27, 67, 50, 0.12);
     border: none;
 }
 
@@ -82,4 +107,19 @@ body {
 
 .login-wrapper {
     min-height: 100vh;
+}
+
+/* Button Styling */
+.btn-primary {
+    background-color: var(--primary-blue) !important;
+    border-color: var(--primary-blue) !important;
+    color: #fff !important;
+}
+
+.btn-primary:hover,
+.btn-primary:focus,
+.btn-primary:active {
+    background-color: var(--secondary-blue) !important;
+    border-color: var(--secondary-blue) !important;
+    color: #fff !important;
 }

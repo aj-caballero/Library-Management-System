@@ -5,11 +5,13 @@ CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     fullname VARCHAR(150) NOT NULL,
     email VARCHAR(150) NOT NULL UNIQUE,
+    lrn VARCHAR(50) DEFAULT NULL,
     password VARCHAR(255) NOT NULL,
     grade_level VARCHAR(20) DEFAULT NULL,
     role ENUM('superadmin', 'admin', 'student') NOT NULL DEFAULT 'student',
     is_active TINYINT(1) NOT NULL DEFAULT 1,
-    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_users_lrn_12_digits CHECK (lrn IS NULL OR (CHAR_LENGTH(lrn) = 12 AND lrn REGEXP '^[0-9]{12}$'))
 );
 
 CREATE TABLE IF NOT EXISTS books (
@@ -61,6 +63,20 @@ CREATE TABLE IF NOT EXISTS system_logs (
     CONSTRAINT fk_system_logs_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE SET NULL
 );
 
+CREATE TABLE IF NOT EXISTS otp_verifications (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(150) NOT NULL,
+    otp VARCHAR(6) NOT NULL,
+    fullname VARCHAR(150) NOT NULL,
+    lrn VARCHAR(50) NOT NULL,
+    grade_level VARCHAR(20) NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    attempts INT DEFAULT 0,
+    expires_at TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT chk_otp_lrn_12_digits CHECK (CHAR_LENGTH(lrn) = 12 AND lrn REGEXP '^[0-9]{12}$')
+);
+
 CREATE TABLE IF NOT EXISTS system_settings (
     id INT AUTO_INCREMENT PRIMARY KEY,
     system_name VARCHAR(150) NOT NULL DEFAULT 'Online Library System',
@@ -79,8 +95,3 @@ INSERT IGNORE INTO users (id, fullname, email, password, grade_level, role) VALU
 (3, 'Aira Dela Cruz', 'aira.delacruz@pnhs.edu.ph', '$2y$10$DVjvT3WR7G.T818/lb.58.5t7OeLXo3K8uDBIxEgJ/9JgrMb6GQ5W', 'Grade 8', 'student'),
 (4, 'Miguel Santos', 'miguel.santos@pnhs.edu.ph', '$2y$10$DVjvT3WR7G.T818/lb.58.5t7OeLXo3K8uDBIxEgJ/9JgrMb6GQ5W', 'Grade 7', 'student');
 
-INSERT IGNORE INTO books (id, title, author, subject, grade_level, cover_image, file_path, status, uploaded_by) VALUES
-(1, 'Science Explorers: Grade 7', 'L. Mendoza', 'Science', 'Grade 7', 'science-grade7.jpg', 'science-grade7.pdf', 'active', 2),
-(2, 'English Communication Skills: Grade 8', 'R. Flores', 'English', 'Grade 8', 'english-grade8.jpg', 'english-grade8.pdf', 'active', 2),
-(3, 'Mathematics in Action: Grade 9', 'D. Aquino', 'Mathematics', 'Grade 9', 'math-grade9.jpg', 'math-grade9.pdf', 'active', 2),
-(4, 'Araling Panlipunan: Grade 10', 'C. Reyes', 'Araling Panlipunan', 'Grade 10', 'ap-grade10.jpg', 'ap-grade10.pdf', 'active', 2);

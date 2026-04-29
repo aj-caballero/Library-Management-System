@@ -59,12 +59,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="/Library Management System/assets/css/style.css">
 </head>
-<body>
+<body class="login-page">
     <div class="container login-wrapper d-flex align-items-center justify-content-center py-4">
         <div class="row w-100 justify-content-center">
             <div class="col-md-6 col-lg-5">
                 <div class="card card-shadow">
                     <div class="card-header brand-gradient text-white text-center py-3">
+                        <img src="/Library Management System/assets/images/SchoolLogo.png" alt="School Logo" 
+                             style="height: 60px; width: auto; margin-bottom: 12px; display: block; margin-left: auto; margin-right: auto;">
                         <h4 class="mb-0">Paliparan NHS Online Library</h4>
                     </div>
                     <div class="card-body p-4">
