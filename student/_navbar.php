@@ -18,6 +18,7 @@ $settings = $pdo->query('SELECT system_name, school_name, logo_path FROM system_
             <ul class="navbar-nav me-auto mb-2 mb-lg-0">
                 <li class="nav-item"><a class="nav-link" href="dashboard.php">Dashboard</a></li>
                 <li class="nav-item"><a class="nav-link" href="library.php">Library</a></li>
+                <li class="nav-item"><a class="nav-link" href="favorites.php">Favorites</a></li>
                 <li class="nav-item"><a class="nav-link" href="reading-history.php">Reading History</a></li>
             </ul>
             <form class="d-flex me-3" action="library.php" method="GET">

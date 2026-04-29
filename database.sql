@@ -35,6 +35,16 @@ CREATE TABLE IF NOT EXISTS reading_logs (
     CONSTRAINT fk_reading_logs_book FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
 );
 
+CREATE TABLE IF NOT EXISTS favorites (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    book_id INT NOT NULL,
+    created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    UNIQUE KEY user_book_unique (user_id, book_id),
+    CONSTRAINT fk_favorites_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_favorites_book FOREIGN KEY (book_id) REFERENCES books(id) ON DELETE CASCADE
+);
+
 CREATE TABLE IF NOT EXISTS reports (
     id INT AUTO_INCREMENT PRIMARY KEY,
     generated_by INT NOT NULL,

@@ -3,97 +3,191 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../config/auth.php';
+require_once __DIR__ . '/../config/admin_layout.php';
 ensureRole(['admin', 'superadmin']);
 
 $reportType = (string) ($_GET['type'] ?? 'available_books');
-$rows = [];
-$headers = [];
+$isCsvExport = (isset($_GET['action']) && $_GET['action'] === 'export_csv');
+
+$page    = max(1, (int)($_GET['page'] ?? 1));
+$perPage = 50;
+$offset  = ($page - 1) * $perPage;
+
+$rows      = [];
+$headers   = [];
+$totalRows = 0;
 
 if ($reportType === 'most_read') {
     $headers = ['Title', 'Author', 'Reads'];
-    $rows = $pdo->query("SELECT b.title, b.author, COUNT(rl.id) AS read_count FROM books b LEFT JOIN reading_logs rl ON rl.book_id = b.id GROUP BY b.id ORDER BY read_count DESC LIMIT 20")->fetchAll();
+    $countSql = "SELECT COUNT(DISTINCT b.id) FROM books b LEFT JOIN reading_logs rl ON rl.book_id = b.id";
+    $totalRows = (int) $pdo->query($countSql)->fetchColumn();
+    
+    $sql = "SELECT b.title, b.author, COUNT(rl.id) AS read_count FROM books b LEFT JOIN reading_logs rl ON rl.book_id = b.id GROUP BY b.id ORDER BY read_count DESC";
+    if (!$isCsvExport) $sql .= " LIMIT $perPage OFFSET $offset";
+    $rows = $pdo->query($sql)->fetchAll();
+    
 } elseif ($reportType === 'active_users') {
     $headers = ['Student Name', 'Email', 'Grade Level', 'Books Opened'];
-    $rows = $pdo->query("SELECT u.fullname, u.email, u.grade_level, COUNT(rl.id) AS books_opened FROM users u LEFT JOIN reading_logs rl ON rl.user_id = u.id WHERE u.role = 'student' AND u.is_active = 1 GROUP BY u.id ORDER BY books_opened DESC")->fetchAll();
+    $countSql = "SELECT COUNT(*) FROM users WHERE role = 'student' AND is_active = 1";
+    $totalRows = (int) $pdo->query($countSql)->fetchColumn();
+    
+    $sql = "SELECT u.fullname, u.email, u.grade_level, COUNT(rl.id) AS books_opened FROM users u LEFT JOIN reading_logs rl ON rl.user_id = u.id WHERE u.role = 'student' AND u.is_active = 1 GROUP BY u.id ORDER BY books_opened DESC";
+    if (!$isCsvExport) $sql .= " LIMIT $perPage OFFSET $offset";
+    $rows = $pdo->query($sql)->fetchAll();
+    
 } else {
     $reportType = 'available_books';
-    $headers = ['Title', 'Author', 'Subject', 'Grade Level', 'Status'];
-    $rows = $pdo->query("SELECT title, author, subject, grade_level, status FROM books ORDER BY title ASC")->fetchAll();
+    $headers    = ['Title', 'Author', 'Subject', 'Grade Level', 'Status'];
+    $countSql = "SELECT COUNT(*) FROM books";
+    $totalRows = (int) $pdo->query($countSql)->fetchColumn();
+    
+    $sql = "SELECT title, author, subject, grade_level, status FROM books ORDER BY title ASC";
+    if (!$isCsvExport) $sql .= " LIMIT $perPage OFFSET $offset";
+    $rows = $pdo->query($sql)->fetchAll();
 }
+
+$totalPages = $totalRows > 0 ? (int) ceil($totalRows / $perPage) : 1;
 
 $logStmt = $pdo->prepare('INSERT INTO reports (generated_by, report_type, generated_at) VALUES (:generated_by, :report_type, NOW())');
 $logStmt->execute([
     ':generated_by' => (int) $_SESSION['user']['id'],
-    ':report_type' => $reportType,
+    ':report_type'  => $reportType,
 ]);
+
+if (isset($_GET['action']) && $_GET['action'] === 'export_csv') {
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename=report_' . $reportType . '_' . date('Y-m-d') . '.csv');
+    $output = fopen('php://output', 'w');
+    
+    // Add # to headers
+    $csvHeaders = array_merge(['#'], $headers);
+    fputcsv($output, $csvHeaders);
+    
+    foreach ($rows as $i => $row) {
+        $cells = array_values(array_filter(
+            $row,
+            fn($k) => !is_int($k),
+            ARRAY_FILTER_USE_KEY
+        ));
+        $csvRow = array_merge([$i + 1], $cells);
+        fputcsv($output, $csvRow);
+    }
+    fclose($output);
+    exit;
+}
+
+$reportLabels = [
+    'available_books' => 'Available Books',
+    'most_read'       => 'Most Read Books',
+    'active_users'    => 'Active Users',
+];
+
+$currentUser  = userDisplayName();
+$initials     = makeInitials($currentUser);
+$sidebarLinks = [
+    ['href' => 'dashboard.php',   'label' => 'Dashboard',    'active' => false],
+    ['href' => 'manage-books.php','label' => 'Manage Books', 'active' => false],
+    ['href' => 'add-book.php',    'label' => 'Add Book',     'active' => false],
+    ['href' => 'manage-users.php','label' => 'Students',     'active' => false],
+    ['href' => 'reports.php',     'label' => 'Reports',      'active' => true],
+];
+
+adminPageStart('Reports', 'Administrator / Reports', $sidebarLinks, 'Administrator',
+    '/Library Management System/logout.php', $currentUser, $initials);
 ?>
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Reports</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link rel="stylesheet" href="/Library Management System/assets/css/style.css">
-</head>
-<body>
-<div class="container-fluid">
-    <div class="row">
-        <aside class="col-md-3 col-lg-2 sidebar p-3">
-            <h5 class="text-white mb-4">Administrator</h5>
-            <nav class="nav flex-column">
-                <a class="nav-link" href="dashboard.php">Dashboard</a>
-                <a class="nav-link" href="manage-books.php">Manage Books</a>
-                <a class="nav-link" href="add-book.php">Add Book</a>
-                <a class="nav-link" href="manage-users.php">Students</a>
-                <a class="nav-link active" href="reports.php">Reports</a>
-                <a class="nav-link" href="/Library Management System/logout.php">Logout</a>
-            </nav>
-        </aside>
-        <main class="col-md-9 col-lg-10 p-4">
-            <div class="d-flex justify-content-between align-items-center mb-3">
-                <h3 class="mb-0">Reports</h3>
-                <div class="d-flex gap-2">
-                    <button class="btn btn-outline-secondary" onclick="window.print()">Print</button>
-                    <a class="btn btn-outline-primary" href="reports.php?type=<?php echo e($reportType); ?>">Refresh</a>
-                </div>
-            </div>
 
-            <form method="GET" class="row g-2 mb-3">
-                <div class="col-md-4">
-                    <select class="form-select" name="type">
-                        <option value="available_books" <?php echo $reportType === 'available_books' ? 'selected' : ''; ?>>Available Books</option>
-                        <option value="most_read" <?php echo $reportType === 'most_read' ? 'selected' : ''; ?>>Most Read Books</option>
-                        <option value="active_users" <?php echo $reportType === 'active_users' ? 'selected' : ''; ?>>Active Users</option>
-                    </select>
-                </div>
-                <div class="col-md-2"><button class="btn btn-primary">Generate</button></div>
-            </form>
-
-            <div class="card card-shadow">
-                <div class="table-responsive">
-                    <table class="table mb-0">
-                        <thead>
-                        <tr>
-                            <?php foreach ($headers as $header): ?>
-                                <th><?php echo e($header); ?></th>
-                            <?php endforeach; ?>
-                        </tr>
-                        </thead>
-                        <tbody>
-                        <?php foreach ($rows as $row): ?>
-                            <tr>
-                                <?php foreach ($row as $cell): ?>
-                                    <td><?php echo e((string) $cell); ?></td>
-                                <?php endforeach; ?>
-                            </tr>
-                        <?php endforeach; ?>
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </main>
-    </div>
+<div class="toolbar">
+    <form method="GET" class="d-flex gap-2" style="flex-wrap:wrap;flex:1;">
+        <select class="form-select" style="max-width:220px;" name="type">
+            <?php foreach ($reportLabels as $val => $label): ?>
+            <option value="<?php echo e($val); ?>" <?php echo $reportType === $val ? 'selected' : ''; ?>>
+                <?php echo e($label); ?>
+            </option>
+            <?php endforeach; ?>
+        </select>
+        <button class="btn btn-primary btn-sm" type="submit">Generate</button>
+    </form>
+    <a class="btn btn-ghost btn-sm" href="reports.php?type=<?php echo e($reportType); ?>&action=export_csv">Generate CSV</a>
+    <a class="btn btn-ghost btn-sm" href="reports.php?type=<?php echo e($reportType); ?>">Refresh</a>
 </div>
-</body>
-</html>
+
+<div class="data-card">
+    <div class="data-card-header">
+        <div class="data-card-title">
+            <?php echo e($reportLabels[$reportType] ?? 'Report'); ?>
+            <span class="badge badge-muted" style="margin-left:8px;"><?php echo number_format($totalRows); ?> total</span>
+        </div>
+        <span class="text-sm text-muted">Generated: <?php echo date('M j, Y H:i'); ?></span>
+    </div>
+    <div class="table-responsive">
+        <table class="admin-table">
+            <thead>
+                <tr>
+                    <th>#</th>
+                    <?php foreach ($headers as $header): ?>
+                    <th><?php echo e($header); ?></th>
+                    <?php endforeach; ?>
+                </tr>
+            </thead>
+            <tbody>
+            <?php if (empty($rows)): ?>
+                <tr><td colspan="<?php echo count($headers) + 1; ?>">
+                    <div class="empty-state">
+                        <div class="empty-state-title">No data available</div>
+                        <div class="empty-state-desc">There is nothing to display for this report type.</div>
+                    </div>
+                </td></tr>
+            <?php else: ?>
+                <?php foreach ($rows as $i => $row):
+                    $cells = array_values(array_filter(
+                        $row,
+                        fn($k) => !is_int($k),
+                        ARRAY_FILTER_USE_KEY
+                    ));
+                ?>
+                <tr>
+                    <td class="text-muted"><?php echo $i + 1; ?></td>
+                    <?php foreach ($cells as $cell): ?>
+                    <td><?php echo e((string) $cell); ?></td>
+                    <?php endforeach; ?>
+                </tr>
+                <?php endforeach; ?>
+            <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+    
+    <?php if ($totalPages > 1): ?>
+    <div class="pagination">
+        <span class="text-sm text-muted" style="margin-right:auto;">
+            Showing <?php echo $offset + 1; ?> to <?php echo min($offset + $perPage, $totalRows); ?> of <?php echo $totalRows; ?> entries
+        </span>
+        
+        <?php if ($page > 1): ?>
+            <a href="reports.php?type=<?php echo e($reportType); ?>&page=<?php echo $page - 1; ?>" class="page-btn">Prev</a>
+        <?php else: ?>
+            <span class="page-btn disabled">Prev</span>
+        <?php endif; ?>
+        
+        <?php
+        $startPage = max(1, $page - 2);
+        $endPage = min($totalPages, $page + 2);
+        
+        for ($p = $startPage; $p <= $endPage; $p++):
+        ?>
+            <a href="reports.php?type=<?php echo e($reportType); ?>&page=<?php echo $p; ?>" 
+               class="page-btn <?php echo $p === $page ? 'active' : ''; ?>">
+                <?php echo $p; ?>
+            </a>
+        <?php endfor; ?>
+        
+        <?php if ($page < $totalPages): ?>
+            <a href="reports.php?type=<?php echo e($reportType); ?>&page=<?php echo $page + 1; ?>" class="page-btn">Next</a>
+        <?php else: ?>
+            <span class="page-btn disabled">Next</span>
+        <?php endif; ?>
+    </div>
+    <?php endif; ?>
+</div>
+
+<?php adminPageEnd(); ?>

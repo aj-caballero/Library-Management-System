@@ -20,6 +20,20 @@ if (!$book) {
     exit;
 }
 
+$favStmt = $pdo->prepare("SELECT id FROM favorites WHERE user_id = :user_id AND book_id = :book_id LIMIT 1");
+$favStmt->execute([':user_id' => $_SESSION['user']['id'], ':book_id' => $bookId]);
+$isFavorite = (bool) $favStmt->fetch();
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['action']) && $_POST['action'] === 'toggle_favorite') {
+    if ($isFavorite) {
+        $pdo->prepare("DELETE FROM favorites WHERE user_id = :user_id AND book_id = :book_id")->execute([':user_id' => $_SESSION['user']['id'], ':book_id' => $bookId]);
+        $isFavorite = false;
+    } else {
+        $pdo->prepare("INSERT IGNORE INTO favorites (user_id, book_id) VALUES (:user_id, :book_id)")->execute([':user_id' => $_SESSION['user']['id'], ':book_id' => $bookId]);
+        $isFavorite = true;
+    }
+}
+
 $logStmt = $pdo->prepare('INSERT INTO reading_logs (user_id, book_id, opened_at) VALUES (:user_id, :book_id, NOW())');
 $logStmt->execute([
     ':user_id' => (int) $_SESSION['user']['id'],
@@ -51,6 +65,13 @@ logSystemActivity($pdo, (int) $_SESSION['user']['id'], 'Opened a book for readin
                     <p class="mb-1"><strong>Author:</strong> <?php echo e($book['author']); ?></p>
                     <p class="mb-1"><strong>Subject:</strong> <?php echo e($book['subject']); ?></p>
                     <p class="mb-0"><strong>Grade Level:</strong> <?php echo e($book['grade_level']); ?></p>
+                    <hr>
+                    <form method="POST">
+                        <input type="hidden" name="action" value="toggle_favorite">
+                        <button type="submit" class="btn <?php echo $isFavorite ? 'btn-danger' : 'btn-outline-danger'; ?> w-100 fw-bold">
+                            <?php echo $isFavorite ? '♥ Remove from Favorites' : '♡ Add to Favorites'; ?>
+                        </button>
+                    </form>
                 </div>
             </div>
         </div>
