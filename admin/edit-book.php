@@ -140,7 +140,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <label class="form-label">Status</label>
                                 <select class="form-select" name="status">
                                     <option value="active" <?php echo $book['status'] === 'active' ? 'selected' : ''; ?>>active</option>
-                                    <option value="inactive" <?php echo $book['status'] === 'inactive' ? 'selected' : ''; ?>>inactive</option>
+                                    <option value="inactive" <?php echo $book['status'] === 'inactive' ? 'selected' : ''; ?>>archived</option>
                                 </select>
                             </div>
                             <div class="col-12"><button class="btn btn-primary" type="submit">Update Book</button></div>

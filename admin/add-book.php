@@ -7,6 +7,11 @@ ensureRole(['admin', 'superadmin']);
 
 $error = '';
 $success = '';
+$subject = '';
+$selectedSubject = '';
+$newSubject = '';
+
+$subjects = $pdo->query('SELECT DISTINCT subject FROM books ORDER BY subject ASC')->fetchAll(PDO::FETCH_COLUMN);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isValidCsrf($_POST['csrf_token'] ?? null)) {
@@ -15,9 +20,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $title = trim((string) ($_POST['title'] ?? ''));
     $author = trim((string) ($_POST['author'] ?? ''));
-    $subject = trim((string) ($_POST['subject'] ?? ''));
+    $selectedSubject = trim((string) ($_POST['subject'] ?? ''));
+    $newSubject = trim((string) ($_POST['new_subject'] ?? ''));
+    $subject = $selectedSubject === '__new__' ? $newSubject : $selectedSubject;
     $gradeLevel = trim((string) ($_POST['grade_level'] ?? ''));
-    $status = trim((string) ($_POST['status'] ?? 'active'));
 
     if ($error === '' && ($title === '' || $author === '' || $subject === '' || $gradeLevel === '')) {
         $error = 'Please complete all required fields.';
@@ -58,7 +64,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($error === '') {
-            $stmt = $pdo->prepare('INSERT INTO books (title, author, subject, grade_level, cover_image, file_path, status, uploaded_by, created_at) VALUES (:title, :author, :subject, :grade_level, :cover_image, :file_path, :status, :uploaded_by, NOW())');
+            $stmt = $pdo->prepare("INSERT INTO books (title, author, subject, grade_level, cover_image, file_path, status, uploaded_by, created_at) VALUES (:title, :author, :subject, :grade_level, :cover_image, :file_path, 'active', :uploaded_by, NOW())");
             $stmt->execute([
                 ':title' => $title,
                 ':author' => $author,
@@ -66,7 +72,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 ':grade_level' => $gradeLevel,
                 ':cover_image' => $coverName,
                 ':file_path' => $bookName,
-                ':status' => in_array($status, ['active', 'inactive'], true) ? $status : 'active',
                 ':uploaded_by' => (int) $_SESSION['user']['id'],
             ]);
             logSystemActivity($pdo, (int) $_SESSION['user']['id'], 'Added a new book');
@@ -118,7 +123,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Subject</label>
-                                <input class="form-control" name="subject" placeholder="Science, English, Mathematics" required>
+                                <select class="form-select" name="subject" id="subjectSelect" required>
+                                    <option value="">Select subject</option>
+                                    <?php foreach ($subjects as $item): ?>
+                                        <option value="<?php echo e((string) $item); ?>" <?php echo $selectedSubject === (string) $item ? 'selected' : ''; ?>><?php echo e((string) $item); ?></option>
+                                    <?php endforeach; ?>
+                                    <option value="__new__" <?php echo $selectedSubject === '__new__' ? 'selected' : ''; ?>>Add new subject</option>
+                                </select>
+                            </div>
+                            <div class="col-md-6" id="newSubjectWrap" style="display: <?php echo $selectedSubject === '__new__' ? 'block' : 'none'; ?>;">
+                                <label class="form-label">New Subject</label>
+                                <input class="form-control" id="newSubjectInput" name="new_subject" value="<?php echo e($newSubject); ?>" placeholder="Type new subject">
                             </div>
                             <div class="col-md-6">
                                 <label class="form-label">Grade Level</label>
@@ -138,13 +153,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <label class="form-label">Book PDF</label>
                                 <input class="form-control" type="file" name="book_file" accept="application/pdf" required>
                             </div>
-                            <div class="col-md-4">
-                                <label class="form-label">Status</label>
-                                <select class="form-select" name="status">
-                                    <option value="active">active</option>
-                                    <option value="inactive">inactive</option>
-                                </select>
-                            </div>
                             <div class="col-12">
                                 <button class="btn btn-primary" type="submit">Save Book</button>
                             </div>
@@ -155,5 +163,28 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </main>
     </div>
 </div>
+<script>
+    (function () {
+        var subjectSelect = document.getElementById('subjectSelect');
+        var newSubjectWrap = document.getElementById('newSubjectWrap');
+        var newSubjectInput = document.getElementById('newSubjectInput');
+
+        if (!subjectSelect || !newSubjectWrap || !newSubjectInput) {
+            return;
+        }
+
+        function toggleNewSubject() {
+            var isNew = subjectSelect.value === '__new__';
+            newSubjectWrap.style.display = isNew ? 'block' : 'none';
+            newSubjectInput.required = isNew;
+            if (!isNew) {
+                newSubjectInput.value = '';
+            }
+        }
+
+        subjectSelect.addEventListener('change', toggleNewSubject);
+        toggleNewSubject();
+    })();
+</script>
 </body>
 </html>
