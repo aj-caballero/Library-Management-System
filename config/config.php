@@ -14,11 +14,11 @@ $password = '';
 // SMTP settings for PHPMailer. Replace these with your real mail provider values.
 // Gmail users typically need an App Password instead of their normal password.
 if (!defined('MAIL_HOST')) {
-    define('MAIL_HOST', 'smtp.example.com');
+    define('MAIL_HOST', 'smtp.gmail.com');
     define('MAIL_PORT', 587);
-    define('MAIL_USERNAME', 'your-email@example.com');
-    define('MAIL_PASSWORD', 'your-email-password-or-app-password');
-    define('MAIL_FROM_ADDRESS', 'your-email@example.com');
+    define('MAIL_USERNAME', 'jm6793803@gmail.com');
+    define('MAIL_PASSWORD', 'tdym cqrb ukha rfnn');
+    define('MAIL_FROM_ADDRESS', 'jm6793803@gmail.com');
     define('MAIL_FROM_NAME', 'Paliparan NHS Online Library');
     define('MAIL_ENCRYPTION', 'tls');
 }

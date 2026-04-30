@@ -8,6 +8,7 @@ ensureRole(['superadmin']);
 
 $error   = '';
 $success = '';
+$gradeOptions = ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     if (!isValidCsrf($_POST['csrf_token'] ?? null)) {
@@ -57,7 +58,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $error = 'Please provide a valid email address.';
         } elseif (!in_array($role, ['admin', 'student'], true)) {
             $error = 'Only admin or student roles are editable here.';
+        } elseif ($role === 'student' && !in_array((string) $gradeLevel, $gradeOptions, true)) {
+            $error = 'Please select a valid grade level for students.';
         } else {
+            if ($role === 'admin') {
+                $gradeLevel = null;
+            }
+
             $targetStmt = $pdo->prepare('SELECT role FROM users WHERE id = :id LIMIT 1');
             $targetStmt->execute([':id' => $userId]);
             $targetUser = $targetStmt->fetch();
@@ -222,9 +229,13 @@ adminPageStart('Manage Users', 'Super Admin / Manage Users', $sidebarLinks, 'Sup
                                value="<?php echo e($user['email']); ?>" required style="min-width:170px;">
                     </td>
                     <td>
-                        <input type="text" name="grade_level" class="form-control form-control-sm"
-                               value="<?php echo e($user['grade_level'] ?? ''); ?>"
-                               placeholder="—" style="min-width:80px;">
+                        <select name="grade_level" class="form-select form-select-sm grade-level-select"
+                                style="min-width:120px;" <?php echo $user['role'] === 'admin' ? 'disabled' : 'required'; ?>>
+                            <option value="">No grade</option>
+                            <?php foreach ($gradeOptions as $gradeOption): ?>
+                                <option value="<?php echo e($gradeOption); ?>" <?php echo ($user['grade_level'] ?? '') === $gradeOption ? 'selected' : ''; ?>><?php echo e($gradeOption); ?></option>
+                            <?php endforeach; ?>
+                        </select>
                     </td>
                     <td>
                         <select name="role" class="form-select form-select-sm" style="min-width:90px;">
@@ -258,5 +269,29 @@ adminPageStart('Manage Users', 'Super Admin / Manage Users', $sidebarLinks, 'Sup
         </table>
     </div>
 </div>
+
+<script>
+document.querySelectorAll('form').forEach((form) => {
+    const roleSelect = form.querySelector('select[name="role"]');
+    const gradeSelect = form.querySelector('select[name="grade_level"]');
+
+    if (!roleSelect || !gradeSelect) {
+        return;
+    }
+
+    const syncGradeField = () => {
+        const isAdmin = roleSelect.value === 'admin';
+        gradeSelect.disabled = isAdmin;
+        gradeSelect.required = !isAdmin;
+
+        if (isAdmin) {
+            gradeSelect.value = '';
+        }
+    };
+
+    roleSelect.addEventListener('change', syncGradeField);
+    syncGradeField();
+});
+</script>
 
 <?php adminPageEnd(); ?>
