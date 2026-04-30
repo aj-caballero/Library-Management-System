@@ -46,9 +46,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $userId          = (int) ($_POST['user_id'] ?? 0);
         $fullname        = trim((string) ($_POST['fullname'] ?? ''));
         $email           = trim((string) ($_POST['email'] ?? ''));
+        $role            = (string) ($_POST['role'] ?? 'student');
         $gradeLevelInput = trim((string) ($_POST['grade_level'] ?? ''));
         $gradeLevel      = $gradeLevelInput === '' ? null : $gradeLevelInput;
-        $role            = (string) ($_POST['role'] ?? 'student');
+        if ($role === 'admin') {
+            $gradeLevel = null;
+        }
         $isActive        = isset($_POST['is_active']) ? 1 : 0;
 
         if ($userId <= 0 || $fullname === '' || $email === '') {
@@ -222,9 +225,18 @@ adminPageStart('Manage Users', 'Super Admin / Manage Users', $sidebarLinks, 'Sup
                                value="<?php echo e($user['email']); ?>" required style="min-width:170px;">
                     </td>
                     <td>
-                        <input type="text" name="grade_level" class="form-control form-control-sm"
-                               value="<?php echo e($user['grade_level'] ?? ''); ?>"
-                               placeholder="—" style="min-width:80px;">
+                        <?php if ($user['role'] === 'student'): ?>
+                        <select name="grade_level" class="form-select form-select-sm" style="min-width:120px;">
+                            <option value="">—</option>
+                            <option value="7" <?php echo ($user['grade_level'] === '7') ? 'selected' : ''; ?>>Grade 7</option>
+                            <option value="8" <?php echo ($user['grade_level'] === '8') ? 'selected' : ''; ?>>Grade 8</option>
+                            <option value="9" <?php echo ($user['grade_level'] === '9') ? 'selected' : ''; ?>>Grade 9</option>
+                            <option value="10" <?php echo ($user['grade_level'] === '10') ? 'selected' : ''; ?>>Grade 10</option>
+                        </select>
+                        <?php else: ?>
+                        <input type="text" class="form-control form-control-sm" value="—" disabled style="min-width:80px;">
+                        <input type="hidden" name="grade_level" value="">
+                        <?php endif; ?>
                     </td>
                     <td>
                         <select name="role" class="form-select form-select-sm" style="min-width:90px;">
