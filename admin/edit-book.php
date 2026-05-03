@@ -38,6 +38,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $selectedSubject = trim((string) ($_POST['subject'] ?? ''));
     $newSubject      = trim((string) ($_POST['new_subject'] ?? ''));
     $subject         = $selectedSubject === '__new__' ? $newSubject : $selectedSubject;
+
+    // Normalize subject input: Title case (first letter capital, rest lower for each word)
+    $subject = trim((string) $subject);
+    if ($subject !== '') {
+        if (function_exists('mb_convert_case')) {
+            $normalizedSubject = mb_convert_case($subject, MB_CASE_TITLE, 'UTF-8');
+        } else {
+            $normalizedSubject = ucwords(strtolower($subject));
+        }
+        // If a subject with same text (case-insensitive) already exists, use the stored casing
+        $stmtSub = $pdo->prepare('SELECT subject FROM books WHERE LOWER(subject) = LOWER(:s) LIMIT 1');
+        $stmtSub->execute([':s' => $normalizedSubject]);
+        $existingSub = $stmtSub->fetchColumn();
+        if ($existingSub !== false) {
+            $subject = $existingSub;
+        } else {
+            $subject = $normalizedSubject;
+        }
+    }
     $gradeLevel      = trim((string) ($_POST['grade_level'] ?? ''));
     $status          = trim((string) ($_POST['status'] ?? 'active'));
 

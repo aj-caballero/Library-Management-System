@@ -87,10 +87,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <button type="submit" class="btn btn-primary w-100">Login</button>
                         </form>
                         <div class="text-center mt-3">
-                            <a href="/Library Management System/register.php" class="small">Student registration</a>
+                            <a href="/Library Management System/forgot-password.php" class="small">Forgot password?</a>
                         </div>
+                        <p class="text-center mt-2 small">Don't have an account? <a href="/Library Management System/register.php">Register Here</a></p>
                         <hr>
-                        <p class="small text-muted mb-0">Demo password for seeded accounts: <strong>password123</strong></p>
                     </div>
                 </div>
             </div>
