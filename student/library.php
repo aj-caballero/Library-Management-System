@@ -31,7 +31,7 @@ $stmt->execute($params);
 $books = $stmt->fetchAll();
 
 $subjects = $pdo->query("SELECT DISTINCT subject FROM books WHERE status = 'active' ORDER BY subject ASC")->fetchAll();
-$levels = $pdo->query("SELECT DISTINCT grade_level FROM books WHERE status = 'active' ORDER BY grade_level ASC")->fetchAll();
+$grades = ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10'];
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -59,8 +59,8 @@ $levels = $pdo->query("SELECT DISTINCT grade_level FROM books WHERE status = 'ac
         <div class="col-md-2">
             <select class="form-select" name="grade_level">
                 <option value="">All grades</option>
-                <?php foreach ($levels as $item): ?>
-                    <option value="<?php echo e($item['grade_level']); ?>" <?php echo $gradeLevel === $item['grade_level'] ? 'selected' : ''; ?>><?php echo e($item['grade_level']); ?></option>
+                <?php foreach ($grades as $grade): ?>
+                    <option value="<?php echo e($grade); ?>" <?php echo $gradeLevel === $grade ? 'selected' : ''; ?>><?php echo e($grade); ?></option>
                 <?php endforeach; ?>
             </select>
         </div>
@@ -68,23 +68,32 @@ $levels = $pdo->query("SELECT DISTINCT grade_level FROM books WHERE status = 'ac
     </form>
 
     <div class="row g-3">
-        <?php foreach ($books as $book): ?>
-            <div class="col-6 col-md-4 col-lg-3">
-                <div class="card card-shadow book-card h-100">
-                    <?php if (!empty($book['cover_image'])): ?>
-                        <img src="/Library Management System/uploads/covers/<?php echo e($book['cover_image']); ?>" class="card-img-top" alt="<?php echo e($book['title']); ?>">
-                    <?php else: ?>
-                        <div class="brand-gradient text-white d-flex align-items-center justify-content-center" style="height:220px;">No Cover</div>
-                    <?php endif; ?>
-                    <div class="card-body">
-                        <h6><?php echo e($book['title']); ?></h6>
-                        <p class="small text-muted mb-1"><?php echo e($book['author']); ?></p>
-                        <p class="small mb-2"><?php echo e($book['subject']); ?> | <?php echo e($book['grade_level']); ?></p>
-                        <a href="book-view.php?id=<?php echo (int) $book['id']; ?>" class="btn btn-sm btn-outline-primary w-100">Read</a>
-                    </div>
+        <?php if (empty($books)): ?>
+            <div class="col-12">
+                <div class="alert alert-info text-center" role="alert">
+                    <h5>No books found</h5>
+                    <p class="mb-0">Try adjusting your search filters or browse all books.</p>
                 </div>
             </div>
-        <?php endforeach; ?>
+        <?php else: ?>
+            <?php foreach ($books as $book): ?>
+                <div class="col-6 col-md-4 col-lg-3">
+                    <div class="card card-shadow book-card h-100">
+                        <?php if (!empty($book['cover_image'])): ?>
+                            <img src="/Library Management System/uploads/covers/<?php echo e($book['cover_image']); ?>" class="card-img-top" alt="<?php echo e($book['title']); ?>">
+                        <?php else: ?>
+                            <div class="brand-gradient text-white d-flex align-items-center justify-content-center" style="height:220px;">No Cover</div>
+                        <?php endif; ?>
+                        <div class="card-body">
+                            <h6><?php echo e($book['title']); ?></h6>
+                            <p class="small text-muted mb-1"><?php echo e($book['author']); ?></p>
+                            <p class="small mb-2"><?php echo e($book['subject']); ?> | <?php echo e($book['grade_level']); ?></p>
+                            <a href="book-view.php?id=<?php echo (int) $book['id']; ?>" class="btn btn-sm btn-outline-primary w-100">Read</a>
+                        </div>
+                    </div>
+                </div>
+            <?php endforeach; ?>
+        <?php endif; ?>
     </div>
 </div>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>

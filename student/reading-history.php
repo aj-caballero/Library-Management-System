@@ -5,9 +5,33 @@ declare(strict_types=1);
 require_once __DIR__ . '/../config/auth.php';
 ensureRole(['student']);
 
-$stmt = $pdo->prepare('SELECT b.title, b.author, b.subject, rl.opened_at FROM reading_logs rl INNER JOIN books b ON b.id = rl.book_id WHERE rl.user_id = :user_id ORDER BY rl.opened_at DESC');
-$stmt->execute([':user_id' => (int) $_SESSION['user']['id']]);
+$search = trim((string) ($_GET['search'] ?? ''));
+$subject = trim((string) ($_GET['subject'] ?? ''));
+
+$sql = 'SELECT b.title, b.author, b.subject, rl.opened_at FROM reading_logs rl INNER JOIN books b ON b.id = rl.book_id WHERE rl.user_id = :user_id';
+$params = [':user_id' => (int) $_SESSION['user']['id']];
+
+if ($search !== '') {
+    $sql .= ' AND (b.title LIKE :search_title OR b.author LIKE :search_author)';
+    $params[':search_title'] = '%' . $search . '%';
+    $params[':search_author'] = '%' . $search . '%';
+}
+
+if ($subject !== '') {
+    $sql .= ' AND b.subject = :subject';
+    $params[':subject'] = $subject;
+}
+
+$sql .= ' ORDER BY rl.opened_at DESC';
+
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params);
 $history = $stmt->fetchAll();
+
+// Get unique subjects for filter dropdown
+$subjectsStmt = $pdo->prepare('SELECT DISTINCT b.subject FROM reading_logs rl INNER JOIN books b ON b.id = rl.book_id WHERE rl.user_id = :user_id ORDER BY b.subject ASC');
+$subjectsStmt->execute([':user_id' => (int) $_SESSION['user']['id']]);
+$subjects = $subjectsStmt->fetchAll();
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -22,19 +46,39 @@ $history = $stmt->fetchAll();
 <?php require __DIR__ . '/_navbar.php'; ?>
 <div class="container py-4">
     <h3 class="mb-3">Reading History</h3>
+    <form class="row g-2 mb-4" method="GET">
+        <div class="col-md-6"><input class="form-control" name="search" placeholder="Search by title or author" value="<?php echo e($search); ?>"></div>
+        <div class="col-md-4">
+            <select class="form-select" name="subject">
+                <option value="">All subjects</option>
+                <?php foreach ($subjects as $item): ?>
+                    <option value="<?php echo e($item['subject']); ?>" <?php echo $subject === $item['subject'] ? 'selected' : ''; ?>><?php echo e($item['subject']); ?></option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="col-md-2"><button class="btn btn-primary w-100">Filter</button></div>
+    </form>
     <div class="card card-shadow">
         <div class="table-responsive">
             <table class="table mb-0">
                 <thead><tr><th>Book Title</th><th>Author</th><th>Subject</th><th>Opened At</th></tr></thead>
                 <tbody>
-                <?php foreach ($history as $row): ?>
+                <?php if (empty($history)): ?>
                     <tr>
-                        <td><?php echo e($row['title']); ?></td>
-                        <td><?php echo e($row['author']); ?></td>
-                        <td><?php echo e($row['subject']); ?></td>
-                        <td><?php echo e($row['opened_at']); ?></td>
+                        <td colspan="4" class="text-center py-4">
+                            <p class="text-muted mb-0">No reading history found</p>
+                        </td>
                     </tr>
-                <?php endforeach; ?>
+                <?php else: ?>
+                    <?php foreach ($history as $row): ?>
+                        <tr>
+                            <td><?php echo e($row['title']); ?></td>
+                            <td><?php echo e($row['author']); ?></td>
+                            <td><?php echo e($row['subject']); ?></td>
+                            <td><?php echo e($row['opened_at']); ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php endif; ?>
                 </tbody>
             </table>
         </div>

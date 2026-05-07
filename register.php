@@ -17,10 +17,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $email = filter_input(INPUT_POST, 'email', FILTER_SANITIZE_EMAIL) ?: '';
     $lrn = trim((string) ($_POST['lrn'] ?? ''));
     $password = (string) ($_POST['password'] ?? '');
+    $confirmPassword = (string) ($_POST['confirm_password'] ?? '');
     $gradeLevel = trim((string) ($_POST['grade_level'] ?? ''));
 
     if ($error === '' && ($fullname === '' || !filter_var($email, FILTER_VALIDATE_EMAIL) || strlen($password) < 8 || $gradeLevel === '' || !preg_match('/^\d{12}$/', $lrn))) {
         $error = 'Please fill out all fields. Password must be at least 8 characters.';
+    } elseif ($error === '' && $password !== $confirmPassword) {
+        $error = 'Passwords do not match.';
     } elseif ($error === '') {
         $checkStmt = $pdo->prepare('SELECT id FROM users WHERE email = :email LIMIT 1');
         $checkStmt->execute([':email' => $email]);
@@ -58,6 +61,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register | Online Library System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/Library Management System/assets/css/style.css">
 </head>
 <body>
@@ -101,7 +105,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Password</label>
-                                <input type="password" name="password" class="form-control" minlength="8" required>
+                                <div class="password-input-group">
+                                    <input type="password" name="password" class="form-control password-field" minlength="8" required>
+                                    <button type="button" class="btn-toggle-password" tabindex="-1">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Confirm Password</label>
+                                <div class="password-input-group">
+                                    <input type="password" name="confirm_password" class="form-control password-field" minlength="8" required>
+                                    <button type="button" class="btn-toggle-password" tabindex="-1">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
                             </div>
                             <button type="submit" class="btn btn-primary w-100">Continue to Verification</button>
                         </form>
@@ -114,4 +132,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 </body>
+<script>
+    // Password visibility toggle functionality
+    document.querySelectorAll('.btn-toggle-password').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const passwordField = this.closest('.password-input-group').querySelector('.password-field');
+            const icon = this.querySelector('i');
+            const isPassword = passwordField.type === 'password';
+            
+            passwordField.type = isPassword ? 'text' : 'password';
+            this.classList.toggle('active');
+            
+            // Toggle icon class
+            icon.classList.toggle('fa-eye');
+            icon.classList.toggle('fa-eye-slash');
+        });
+    });
+</script>
 </html>

@@ -46,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Reset Password | Online Library System</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="/Library Management System/assets/css/style.css">
 </head>
 <body class="login-page">
@@ -71,11 +72,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <input type="hidden" name="token" value="<?php echo e($token); ?>">
                             <div class="mb-3">
                                 <label class="form-label">New Password</label>
-                                <input type="password" name="password" class="form-control" required>
+                                <div class="password-input-group">
+                                    <input type="password" name="password" class="form-control password-field" required>
+                                    <button type="button" class="btn-toggle-password" tabindex="-1">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
                             </div>
                             <div class="mb-3">
                                 <label class="form-label">Confirm Password</label>
-                                <input type="password" name="confirm_password" class="form-control" required>
+                                <div class="password-input-group">
+                                    <input type="password" name="confirm_password" class="form-control password-field" required>
+                                    <button type="button" class="btn-toggle-password" tabindex="-1">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </div>
                             </div>
                             <button type="submit" class="btn btn-primary w-100">Reset Password</button>
                         </form>
@@ -90,4 +101,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </div>
     </div>
 </body>
+<script>
+    // Password visibility toggle functionality
+    document.querySelectorAll('.btn-toggle-password').forEach(button => {
+        button.addEventListener('click', function(e) {
+            e.preventDefault();
+            const passwordField = this.closest('.password-input-group').querySelector('.password-field');
+            const icon = this.querySelector('i');
+            const isPassword = passwordField.type === 'password';
+            
+            passwordField.type = isPassword ? 'text' : 'password';
+            this.classList.toggle('active');
+            
+            // Toggle icon class
+            icon.classList.toggle('fa-eye');
+            icon.classList.toggle('fa-eye-slash');
+        });
+    });
+</script>
 </html>

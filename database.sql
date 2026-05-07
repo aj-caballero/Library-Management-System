@@ -10,6 +10,10 @@ CREATE TABLE IF NOT EXISTS users (
     grade_level VARCHAR(20) DEFAULT NULL,
     role ENUM('superadmin', 'admin', 'student') NOT NULL DEFAULT 'student',
     is_active TINYINT(1) NOT NULL DEFAULT 1,
+    is_archived TINYINT(1) NOT NULL DEFAULT 0,
+    archived_reason VARCHAR(255) DEFAULT NULL,
+    last_login_at DATETIME DEFAULT NULL,
+    inactivity_warning_sent_at DATETIME DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT chk_users_lrn_12_digits CHECK (lrn IS NULL OR (CHAR_LENGTH(lrn) = 12 AND lrn REGEXP '^[0-9]{12}$'))
 );

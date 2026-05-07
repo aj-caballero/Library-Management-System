@@ -6,6 +6,37 @@ require_once __DIR__ . '/config.php';
 require_once __DIR__ . '/../vendor/autoload.php';
 
 /**
+ * Generic email sending function
+ */
+function sendEmail(string $email, string $subject, string $body, bool $isHtml = false): bool
+{
+    $mailer = new PHPMailer\PHPMailer\PHPMailer(true);
+
+    try {
+        $mailer->isSMTP();
+        $mailer->Host = MAIL_HOST;
+        $mailer->SMTPAuth = true;
+        $mailer->Username = MAIL_USERNAME;
+        $mailer->Password = MAIL_PASSWORD;
+        $mailer->Port = (int) MAIL_PORT;
+        $mailer->SMTPSecure = MAIL_ENCRYPTION;
+        $mailer->CharSet = 'UTF-8';
+
+        $mailer->setFrom(MAIL_FROM_ADDRESS, MAIL_FROM_NAME);
+        $mailer->addAddress($email);
+
+        $mailer->isHTML($isHtml);
+        $mailer->Subject = $subject;
+        $mailer->Body = $body;
+
+        $mailer->send();
+        return true;
+    } catch (Throwable $exception) {
+        return false;
+    }
+}
+
+/**
  * Ensure the OTP verification table exists before using it.
  */
 function ensureOtpVerificationTable(PDO $pdo): void
