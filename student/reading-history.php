@@ -3,26 +3,38 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../config/auth.php';
+require_once __DIR__ . '/../config/pagination.php';
 ensureRole(['student']);
 
 $search = trim((string) ($_GET['search'] ?? ''));
 $subject = trim((string) ($_GET['subject'] ?? ''));
+$page = max(1, (int) ($_GET['page'] ?? 1));
+$perPage = 10;
+$offset = ($page - 1) * $perPage;
 
 $sql = 'SELECT b.title, b.author, b.subject, rl.opened_at FROM reading_logs rl INNER JOIN books b ON b.id = rl.book_id WHERE rl.user_id = :user_id';
+$countSql = 'SELECT COUNT(*) FROM reading_logs rl INNER JOIN books b ON b.id = rl.book_id WHERE rl.user_id = :user_id';
 $params = [':user_id' => (int) $_SESSION['user']['id']];
 
 if ($search !== '') {
     $sql .= ' AND (b.title LIKE :search_title OR b.author LIKE :search_author)';
+    $countSql .= ' AND (b.title LIKE :search_title OR b.author LIKE :search_author)';
     $params[':search_title'] = '%' . $search . '%';
     $params[':search_author'] = '%' . $search . '%';
 }
 
 if ($subject !== '') {
     $sql .= ' AND b.subject = :subject';
+    $countSql .= ' AND b.subject = :subject';
     $params[':subject'] = $subject;
 }
 
-$sql .= ' ORDER BY rl.opened_at DESC';
+$countStmt = $pdo->prepare($countSql);
+$countStmt->execute($params);
+$totalRows = (int) $countStmt->fetchColumn();
+$totalPages = $totalRows > 0 ? (int) ceil($totalRows / $perPage) : 1;
+
+$sql .= ' ORDER BY rl.opened_at DESC LIMIT ' . $perPage . ' OFFSET ' . $offset;
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
@@ -84,6 +96,12 @@ $subjects = $subjectsStmt->fetchAll();
         </div>
     </div>
 </div>
+
+<?php renderPaginationLinks('reading-history.php', [
+    'search' => $search,
+    'subject' => $subject,
+], $page, $totalPages, $totalRows, $perPage); ?>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

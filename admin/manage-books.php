@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../config/auth.php';
 require_once __DIR__ . '/../config/admin_layout.php';
+require_once __DIR__ . '/../config/pagination.php';
 ensureRole(['admin', 'superadmin']);
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && in_array((string) ($_POST['action'] ?? ''), ['archive_book', 'restore_book'], true)) {
@@ -38,35 +39,49 @@ $view       = trim((string) ($_GET['view'] ?? 'active'));
 $search     = trim((string) ($_GET['search'] ?? ''));
 $subject    = trim((string) ($_GET['subject'] ?? ''));
 $gradeLevel = trim((string) ($_GET['grade_level'] ?? ''));
+$page       = max(1, (int) ($_GET['page'] ?? 1));
+$perPage    = 12;
+$offset     = ($page - 1) * $perPage;
 
 if (!in_array($view, ['active', 'archived', 'all'], true)) {
     $view = 'active';
 }
 
 $sql    = 'SELECT * FROM books WHERE 1=1';
+$countSql = 'SELECT COUNT(*) FROM books WHERE 1=1';
 $params = [];
 
 if ($view === 'active') {
     $sql .= " AND status = 'active'";
+    $countSql .= " AND status = 'active'";
 } elseif ($view === 'archived') {
     $sql .= " AND status = 'inactive'";
+    $countSql .= " AND status = 'inactive'";
 }
 
 if ($search !== '') {
     $sql .= ' AND (title LIKE :search_title OR author LIKE :search_author)';
+    $countSql .= ' AND (title LIKE :search_title OR author LIKE :search_author)';
     $params[':search_title']  = '%' . $search . '%';
     $params[':search_author'] = '%' . $search . '%';
 }
 if ($subject !== '') {
     $sql .= ' AND subject = :subject';
+    $countSql .= ' AND subject = :subject';
     $params[':subject'] = $subject;
 }
 if ($gradeLevel !== '') {
     $sql .= ' AND grade_level = :grade_level';
+    $countSql .= ' AND grade_level = :grade_level';
     $params[':grade_level'] = $gradeLevel;
 }
 
-$sql .= ' ORDER BY created_at DESC';
+$countStmt = $pdo->prepare($countSql);
+$countStmt->execute($params);
+$totalRows = (int) $countStmt->fetchColumn();
+$totalPages = $totalRows > 0 ? (int) ceil($totalRows / $perPage) : 1;
+
+$sql .= ' ORDER BY created_at DESC LIMIT ' . $perPage . ' OFFSET ' . $offset;
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $books = $stmt->fetchAll();
@@ -225,5 +240,12 @@ adminPageStart('Manage Books', 'Administrator / Manage Books', $sidebarLinks, 'A
         </table>
     </div>
 </div>
+
+<?php renderPaginationLinks('manage-books.php', [
+    'view' => $view,
+    'search' => $search,
+    'subject' => $subject,
+    'grade_level' => $gradeLevel,
+], $page, $totalPages, $totalRows, $perPage); ?>
 
 <?php adminPageEnd(); ?>

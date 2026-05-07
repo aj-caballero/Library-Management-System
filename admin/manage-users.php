@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 require_once __DIR__ . '/../config/auth.php';
 require_once __DIR__ . '/../config/admin_layout.php';
+require_once __DIR__ . '/../config/pagination.php';
 ensureRole(['admin', 'superadmin']);
 
 $error = '';
@@ -32,25 +33,37 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 $search = trim((string) ($_GET['search'] ?? ''));
 $gradeLevel = trim((string) ($_GET['grade_level'] ?? ''));
 $status = trim((string) ($_GET['status'] ?? ''));
+$page = max(1, (int) ($_GET['page'] ?? 1));
+$perPage = 10;
+$offset = ($page - 1) * $perPage;
 
 $sql = "SELECT id, fullname, email, grade_level, created_at, is_active FROM users WHERE role = 'student'";
+$countSql = "SELECT COUNT(*) FROM users WHERE role = 'student'";
 $params = [];
 
 if ($search !== '') {
     $sql .= " AND (fullname LIKE :search_name OR email LIKE :search_email)";
+    $countSql .= " AND (fullname LIKE :search_name OR email LIKE :search_email)";
     $params[':search_name']  = '%' . $search . '%';
     $params[':search_email'] = '%' . $search . '%';
 }
 if ($gradeLevel !== '') {
     $sql .= " AND grade_level = :grade_level";
+    $countSql .= " AND grade_level = :grade_level";
     $params[':grade_level'] = $gradeLevel;
 }
 if ($status !== '') {
     $sql .= " AND is_active = :status";
+    $countSql .= " AND is_active = :status";
     $params[':status'] = $status === 'active' ? 1 : 0;
 }
 
-$sql .= " ORDER BY created_at DESC";
+$countStmt = $pdo->prepare($countSql);
+$countStmt->execute($params);
+$totalRows = (int) $countStmt->fetchColumn();
+$totalPages = $totalRows > 0 ? (int) ceil($totalRows / $perPage) : 1;
+
+$sql .= " ORDER BY created_at DESC LIMIT " . $perPage . " OFFSET " . $offset;
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
 $students = $stmt->fetchAll();
@@ -166,5 +179,11 @@ adminPageStart('Students', 'Administrator / Students', $sidebarLinks, 'Administr
         </table>
     </div>
 </div>
+
+<?php renderPaginationLinks('manage-users.php', [
+    'search' => $search,
+    'grade_level' => $gradeLevel,
+    'status' => $status,
+], $page, $totalPages, $totalRows, $perPage); ?>
 
 <?php adminPageEnd(); ?>

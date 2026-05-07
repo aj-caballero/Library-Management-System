@@ -3,11 +3,15 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../config/auth.php';
+require_once __DIR__ . '/../config/pagination.php';
 ensureRole(['superadmin', 'admin']);
 
 $action = trim((string) ($_GET['action'] ?? ''));
 $userId = (int) ($_GET['user_id'] ?? 0);
 $message = '';
+$page = max(1, (int) ($_GET['page'] ?? 1));
+$perPage = 10;
+$offset = ($page - 1) * $perPage;
 
 // Handle reactivation
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'reactivate') {
@@ -41,12 +45,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'reactivate') {
     }
 }
 
-// Get archived accounts
+// Get archived accounts count
+$countStmt = $pdo->query("SELECT COUNT(*) FROM users WHERE is_archived = 1");
+$totalRows = (int) $countStmt->fetchColumn();
+$totalPages = $totalRows > 0 ? (int) ceil($totalRows / $perPage) : 1;
+
 $stmt = $pdo->prepare("
     SELECT id, fullname, email, grade_level, role, is_archived, archived_reason, last_login_at, created_at
     FROM users
     WHERE is_archived = 1
     ORDER BY created_at DESC
+    LIMIT " . $perPage . " OFFSET " . $offset . "
 ");
 $stmt->execute();
 $archivedAccounts = $stmt->fetchAll();
@@ -121,6 +130,8 @@ $archivedAccounts = $stmt->fetchAll();
         </div>
     </div>
 </div>
+
+<?php renderPaginationLinks('manage-archived-accounts.php', [], $page, $totalPages, $totalRows, $perPage); ?>
 
 <!-- Reactivate Modal -->
 <div class="modal fade" id="reactivateModal" tabindex="-1">

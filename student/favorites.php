@@ -3,12 +3,21 @@
 declare(strict_types=1);
 
 require_once __DIR__ . '/../config/auth.php';
+require_once __DIR__ . '/../config/pagination.php';
 ensureRole(['student']);
 
 $search = trim((string) ($_GET['search'] ?? ''));
 $subject = trim((string) ($_GET['subject'] ?? ''));
+$page = max(1, (int) ($_GET['page'] ?? 1));
+$perPage = 12;
+$offset = ($page - 1) * $perPage;
 
 $sql = "SELECT b.id, b.title, b.author, b.subject, b.grade_level, b.cover_image 
+        FROM favorites f 
+        JOIN books b ON f.book_id = b.id 
+        WHERE f.user_id = :user_id AND b.status = 'active'";
+
+$countSql = "SELECT COUNT(*) 
         FROM favorites f 
         JOIN books b ON f.book_id = b.id 
         WHERE f.user_id = :user_id AND b.status = 'active'";
@@ -17,16 +26,23 @@ $params = [':user_id' => $_SESSION['user']['id']];
 
 if ($search !== '') {
     $sql .= ' AND (b.title LIKE :search_title OR b.author LIKE :search_author)';
+    $countSql .= ' AND (b.title LIKE :search_title OR b.author LIKE :search_author)';
     $params[':search_title'] = '%' . $search . '%';
     $params[':search_author'] = '%' . $search . '%';
 }
 
 if ($subject !== '') {
     $sql .= ' AND b.subject = :subject';
+    $countSql .= ' AND b.subject = :subject';
     $params[':subject'] = $subject;
 }
 
-$sql .= " ORDER BY f.created_at DESC";
+$countStmt = $pdo->prepare($countSql);
+$countStmt->execute($params);
+$totalRows = (int) $countStmt->fetchColumn();
+$totalPages = $totalRows > 0 ? (int) ceil($totalRows / $perPage) : 1;
+
+$sql .= " ORDER BY f.created_at DESC LIMIT " . $perPage . " OFFSET " . $offset;
 
 $stmt = $pdo->prepare($sql);
 $stmt->execute($params);
@@ -96,6 +112,12 @@ $subjects = $subjectsStmt->fetchAll();
         </div>
     <?php endif; ?>
 </div>
+
+<?php renderPaginationLinks('favorites.php', [
+    'search' => $search,
+    'subject' => $subject,
+], $page, $totalPages, $totalRows, $perPage); ?>
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>
