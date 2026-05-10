@@ -77,8 +77,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <div class="card card-shadow">
                     <div class="card-header brand-gradient text-white text-center py-3">
                         <img src="/Library Management System/assets/images/SchoolLogo.png" alt="School Logo" 
-                             style="height: 100px; width: auto; margin-bottom: 12px; display: block; margin-left: auto; margin-right: auto;">
-                        <h4 class="mb-0">Paliparan National High School Online Library</h4>
+                             style="height: 160px; width: auto; margin-bottom: 12px; display: block; margin-left: auto; margin-right: auto;">
+                        <h4 class="mb-0" style="font-size: 2rem;">Paliparan National High School Online Library</h4>
                     </div>
                     <div class="card-body p-4">
                         <p class="text-muted mb-4">Sign in to continue.</p>

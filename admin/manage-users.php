@@ -77,6 +77,7 @@ $sidebarLinks = [
     ['href' => 'manage-books.php','label' => 'Manage Books', 'active' => false],
     ['href' => 'add-book.php',    'label' => 'Add Book',     'active' => false],
     ['href' => 'manage-users.php','label' => 'Students',     'active' => true],
+    ['href' => 'manage-archived-accounts.php','label' => 'Archived Accounts', 'active' => false],
     ['href' => 'reports.php',     'label' => 'Reports',      'active' => false],
 ];
 

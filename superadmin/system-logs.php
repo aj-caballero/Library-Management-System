@@ -38,6 +38,7 @@ $initials     = makeInitials($currentUser);
 $sidebarLinks = [
     ['href' => 'dashboard.php',   'label' => 'Dashboard',    'active' => false],
     ['href' => 'manage-users.php','label' => 'Manage Users', 'active' => false],
+    ['href' => 'manage-archived-accounts.php','label' => 'Archived Accounts', 'active' => false],
     ['href' => 'system-logs.php', 'label' => 'System Logs',  'active' => true],
     ['href' => 'settings.php',    'label' => 'Settings',     'active' => false],
 ];

@@ -7,6 +7,8 @@ require_once __DIR__ . '/config/otp.php';
 
 $error = '';
 $success = '';
+$resendCooldownSeconds = 60;
+$remainingCooldown = 0;
 
 // Check if user came from registration
 if (empty($_SESSION['otp_email'])) {
@@ -20,11 +22,34 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Invalid session token. Please refresh and try again.';
     }
 
+    $action = (string) ($_POST['action'] ?? 'verify');
+
+    if ($error === '' && $action === 'resend') {
+        $cooldownStmt = $pdo->prepare('SELECT LEAST(60, GREATEST(0, 60 - TIMESTAMPDIFF(SECOND, created_at, NOW()))) AS remaining_cooldown FROM otp_verifications WHERE email = :email LIMIT 1');
+        $cooldownStmt->execute([':email' => $email]);
+        $cooldownRecord = $cooldownStmt->fetch();
+
+        if (!$cooldownRecord) {
+            $error = 'No pending OTP found. Please register again.';
+            unset($_SESSION['otp_email']);
+        } else {
+            $remainingCooldown = (int) ($cooldownRecord['remaining_cooldown'] ?? 0);
+
+            if ($remainingCooldown > 0) {
+                $error = 'Please wait ' . $remainingCooldown . ' seconds before requesting a new OTP.';
+            } elseif (resendOTPVerification($pdo, $email)) {
+                $success = 'A new OTP has been sent to your email.';
+            } else {
+                $error = 'Failed to resend OTP. Please try again.';
+            }
+        }
+    }
+
     $otp = trim((string) ($_POST['otp'] ?? ''));
 
-    if ($error === '' && $otp === '') {
+    if ($error === '' && $action !== 'resend' && $otp === '') {
         $error = 'Please enter the OTP.';
-    } elseif ($error === '') {
+    } elseif ($error === '' && $action !== 'resend') {
         // Verify OTP
         $otpData = verifyOTP($pdo, $email, $otp);
 
@@ -67,10 +92,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 }
 
 // Count remaining time for OTP
-$otpStmt = $pdo->prepare('SELECT expires_at FROM otp_verifications WHERE email = :email LIMIT 1');
+$otpStmt = $pdo->prepare('SELECT expires_at, LEAST(60, GREATEST(0, 60 - TIMESTAMPDIFF(SECOND, created_at, NOW()))) AS remaining_cooldown FROM otp_verifications WHERE email = :email LIMIT 1');
 $otpStmt->execute([':email' => $email]);
 $otpRecord = $otpStmt->fetch();
 $expiresAt = $otpRecord ? $otpRecord['expires_at'] : null;
+
+if ($otpRecord && isset($otpRecord['remaining_cooldown'])) {
+    $remainingCooldown = (int) $otpRecord['remaining_cooldown'];
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -104,6 +133,7 @@ $expiresAt = $otpRecord ? $otpRecord['expires_at'] : null;
 
                         <form method="POST" novalidate>
                             <?php echo csrfField(); ?>
+                            <input type="hidden" name="action" value="verify">
                             <div class="mb-3">
                                 <label class="form-label">Enter OTP</label>
                                 <input type="text" 
@@ -123,6 +153,14 @@ $expiresAt = $otpRecord ? $otpRecord['expires_at'] : null;
 
                         <div class="text-center mt-4">
                             <p class="small text-muted mb-2">Didn't receive the code?</p>
+                            <form method="POST" class="mb-2">
+                                <?php echo csrfField(); ?>
+                                <input type="hidden" name="action" value="resend">
+                                <button type="submit" id="resendOtpBtn" class="btn btn-outline-primary btn-sm" <?php echo $remainingCooldown > 0 ? 'disabled' : ''; ?>>
+                                    Resend OTP
+                                </button>
+                            </form>
+                            <p id="resendTimer" class="small text-muted mb-2" data-remaining="<?php echo (int) $remainingCooldown; ?>"></p>
                             <a href="/Library Management System/register.php" class="btn btn-ghost btn-sm">Back to Registration</a>
                         </div>
 
@@ -142,6 +180,32 @@ $expiresAt = $otpRecord ? $otpRecord['expires_at'] : null;
         document.querySelector('input[name="otp"]')?.addEventListener('input', function(e) {
             this.value = this.value.replace(/[^0-9]/g, '');
         });
+
+        const resendButton = document.getElementById('resendOtpBtn');
+        const resendTimer = document.getElementById('resendTimer');
+        let remaining = parseInt(resendTimer?.dataset.remaining || '0', 10);
+
+        function updateResendState() {
+            if (!resendButton || !resendTimer) {
+                return;
+            }
+
+            if (remaining > 0) {
+                resendButton.disabled = true;
+                resendTimer.textContent = `You can resend OTP in ${remaining}s`;
+                remaining -= 1;
+            } else {
+                resendButton.disabled = false;
+                resendTimer.textContent = 'You can now request a new OTP.';
+            }
+        }
+
+        if (resendButton && resendTimer) {
+            updateResendState();
+            if (remaining > 0) {
+                setInterval(updateResendState, 1000);
+            }
+        }
     </script>
 </body>
 </html>

@@ -9,6 +9,7 @@
 body {
     background: linear-gradient(180deg, #f1faee 0%, #d8f3dc 100%);
     color: var(--text-dark);
+    font-size: 1.16rem;
 }
 
 body.login-page {
@@ -109,6 +110,20 @@ body.login-page .card-shadow {
     min-height: 100vh;
 }
 
+.brand-gradient h4 {
+    font-size: 1.85rem;
+}
+
+.navbar-brand {
+    font-size: 1.35rem;
+    font-weight: 600;
+}
+
+.navbar-brand img {
+    width: 64px !important;
+    height: 64px !important;
+}
+
 /* Button Styling */
 .btn-primary {
     background-color: var(--primary-blue) !important;
@@ -168,4 +183,18 @@ body.login-page .card-shadow {
 
 .eye-icon {
     display: inline-block;
+}
+
+/* Hide browser-native password reveal controls to avoid duplicate eye icons */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+    display: none;
+}
+
+input[type="password"]::-webkit-credentials-auto-fill-button,
+input[type="password"]::-webkit-textfield-decoration-container {
+    visibility: hidden;
+    pointer-events: none;
+    position: absolute;
+    right: 0;
 }

@@ -174,3 +174,45 @@ function clearOTP(PDO $pdo, string $email): void
     $stmt = $pdo->prepare('DELETE FROM otp_verifications WHERE email = :email');
     $stmt->execute([':email' => $email]);
 }
+
+/**
+ * Resend OTP for an existing pending registration.
+ */
+function resendOTPVerification(PDO $pdo, string $email): bool
+{
+    ensureOtpVerificationTable($pdo);
+
+    $stmt = $pdo->prepare('SELECT fullname FROM otp_verifications WHERE email = :email LIMIT 1');
+    $stmt->execute([':email' => $email]);
+    $record = $stmt->fetch();
+
+    if (!$record) {
+        return false;
+    }
+
+    $otp = generateOTP();
+
+    try {
+        $pdo->beginTransaction();
+
+        $updateStmt = $pdo->prepare('UPDATE otp_verifications SET otp = :otp, attempts = 0, expires_at = DATE_ADD(NOW(), INTERVAL 10 MINUTE), created_at = NOW() WHERE email = :email');
+        $updateStmt->execute([
+            ':otp' => $otp,
+            ':email' => $email,
+        ]);
+
+        if (!sendOTPEmail($email, $otp, (string) $record['fullname'])) {
+            $pdo->rollBack();
+            return false;
+        }
+
+        $pdo->commit();
+        return true;
+    } catch (Throwable $exception) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+
+        return false;
+    }
+}

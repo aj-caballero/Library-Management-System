@@ -4,7 +4,7 @@ $settings = $pdo->query('SELECT system_name, school_name, logo_path FROM system_
 <nav class="navbar navbar-expand-lg bg-white border-bottom sticky-top">
     <div class="container-fluid">
         <a class="navbar-brand d-flex align-items-center gap-2" href="dashboard.php">
-            <img src="/Library Management System/assets/images/SchoolLogo.png" width="40" height="40" alt="School Logo">
+            <img src="/Library Management System/assets/images/SchoolLogo.png" width="64" height="64" alt="School Logo">
             <span><?php echo e($settings['system_name'] ?? 'Online Library'); ?></span>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#studentNav" aria-controls="studentNav" aria-expanded="false" aria-label="Toggle navigation">

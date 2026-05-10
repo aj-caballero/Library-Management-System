@@ -6,7 +6,7 @@ require_once __DIR__ . '/../config/auth.php';
 require_once __DIR__ . '/../config/admin_layout.php';
 require_once __DIR__ . '/../config/pagination.php';
 require_once __DIR__ . '/../config/archived_accounts.php';
-ensureRole(['superadmin', 'admin']);
+ensureRole(['superadmin']);
 
 $flashNotice = $_SESSION['archived_accounts_flash'] ?? null;
 unset($_SESSION['archived_accounts_flash']);
@@ -44,7 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string) ($_POST['action'] ?? '') =
                 'text' => 'Invalid archived account selected.',
             ];
         } else {
-            $checkStmt = $pdo->prepare('SELECT grade_level, fullname FROM users WHERE id = :id AND is_archived = 1 LIMIT 1');
+            $checkStmt = $pdo->prepare('SELECT grade_level FROM users WHERE id = :id AND is_archived = 1 LIMIT 1');
             $checkStmt->execute([':id' => $userId]);
             $user = $checkStmt->fetch();
 
@@ -70,7 +70,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && (string) ($_POST['action'] ?? '') =
             }
         }
 
-        $redirectUrl = basePath('/admin/manage-archived-accounts.php');
+        $redirectUrl = basePath('/superadmin/manage-archived-accounts.php');
         if (!empty($queryParams)) {
             $redirectUrl .= '?' . http_build_query($queryParams);
         }
@@ -97,14 +97,13 @@ $currentUser = userDisplayName();
 $initials = makeInitials($currentUser);
 $sidebarLinks = [
     ['href' => 'dashboard.php', 'label' => 'Dashboard', 'active' => false],
-    ['href' => 'manage-books.php', 'label' => 'Manage Books', 'active' => false],
-    ['href' => 'add-book.php', 'label' => 'Add Book', 'active' => false],
-    ['href' => 'manage-users.php', 'label' => 'Students', 'active' => false],
+    ['href' => 'manage-users.php', 'label' => 'Manage Users', 'active' => false],
     ['href' => 'manage-archived-accounts.php', 'label' => 'Archived Accounts', 'active' => true],
-    ['href' => 'reports.php', 'label' => 'Reports', 'active' => false],
+    ['href' => 'system-logs.php', 'label' => 'System Logs', 'active' => false],
+    ['href' => 'settings.php', 'label' => 'Settings', 'active' => false],
 ];
 
-adminPageStart('Archived Accounts', 'Administrator / Archived Accounts', $sidebarLinks, 'Administrator',
+adminPageStart('Archived Accounts', 'Super Admin / Archived Accounts', $sidebarLinks, 'Super Admin',
     '/Library Management System/logout.php', $currentUser, $initials);
 
 $queryBase = array_filter([
@@ -216,18 +215,18 @@ $queryBase = array_filter([
                                 <td>
                                     <?php $isGrade10 = strpos((string) $account['grade_level'], '10') !== false; ?>
                                     <?php if ($isGrade10): ?>
-                                        <span class="badge badge-danger" title="Grade 10 accounts cannot be unarchived">Locked</span>
+                                    <span class="badge badge-danger" title="Grade 10 accounts cannot be unarchived">Locked</span>
                                     <?php else: ?>
-                                        <form method="POST" class="d-inline">
-                                            <?php echo csrfField(); ?>
-                                            <input type="hidden" name="action" value="reactivate">
-                                            <input type="hidden" name="user_id" value="<?php echo (int) $account['id']; ?>">
-                                            <input type="hidden" name="page" value="<?php echo (int) $page; ?>">
-                                            <input type="hidden" name="search" value="<?php echo e($search); ?>">
-                                            <input type="hidden" name="role" value="<?php echo e($roleFilter); ?>">
-                                            <input type="hidden" name="grade_level" value="<?php echo e($gradeFilter); ?>">
-                                            <button type="submit" class="btn btn-primary btn-sm">Unarchive</button>
-                                        </form>
+                                    <form method="POST" class="d-inline">
+                                        <?php echo csrfField(); ?>
+                                        <input type="hidden" name="action" value="reactivate">
+                                        <input type="hidden" name="user_id" value="<?php echo (int) $account['id']; ?>">
+                                        <input type="hidden" name="page" value="<?php echo (int) $page; ?>">
+                                        <input type="hidden" name="search" value="<?php echo e($search); ?>">
+                                        <input type="hidden" name="role" value="<?php echo e($roleFilter); ?>">
+                                        <input type="hidden" name="grade_level" value="<?php echo e($gradeFilter); ?>">
+                                        <button type="submit" class="btn btn-primary btn-sm">Unarchive</button>
+                                    </form>
                                     <?php endif; ?>
                                 </td>
                             </tr>

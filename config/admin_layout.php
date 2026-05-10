@@ -41,7 +41,7 @@ function adminPageStart(
     <a class="sidebar-brand" href="#">
         <div class="sidebar-brand-icon">
             <img src="/Library Management System/assets/images/SchoolLogo.png" alt="School Logo" 
-                 style="width: 100%; height: 100%; object-fit: contain;">
+                 style="width: 100%; height: 100%; object-fit: contain; transform: scale(1.12);">
         </div>
         <div class="sidebar-brand-text">
             <div class="sidebar-brand-title">LibraryMS</div>

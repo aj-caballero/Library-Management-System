@@ -11,9 +11,11 @@ $success = '';
 $gradeOptions = ['Grade 7', 'Grade 8', 'Grade 9', 'Grade 10'];
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = (string) ($_POST['action'] ?? '');
+
     if (!isValidCsrf($_POST['csrf_token'] ?? null)) {
         $error = 'Invalid session token. Please refresh and try again.';
-    } elseif (isset($_POST['action']) && $_POST['action'] === 'create_admin') {
+    } elseif ($action === 'create_admin') {
         $fullname = trim((string) ($_POST['new_fullname'] ?? ''));
         $email = trim((string) ($_POST['new_email'] ?? ''));
         $password = trim((string) ($_POST['new_password'] ?? ''));
@@ -41,6 +43,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     $error = 'Unable to create admin account right now.';
                 }
+            }
+        }
+    } elseif ($action === 'archive_user') {
+        $userId = (int) ($_POST['user_id'] ?? 0);
+
+        if ($userId <= 0) {
+            $error = 'Invalid user selected.';
+        } elseif ($userId === (int) ($_SESSION['user']['id'] ?? 0)) {
+            $error = 'You cannot archive your own account.';
+        } else {
+            $targetStmt = $pdo->prepare('SELECT role, fullname, is_archived FROM users WHERE id = :id LIMIT 1');
+            $targetStmt->execute([':id' => $userId]);
+            $targetUser = $targetStmt->fetch();
+
+            if (!$targetUser || !in_array((string) $targetUser['role'], ['admin', 'student'], true)) {
+                $error = 'Only student and admin accounts can be archived.';
+            } elseif ((int) ($targetUser['is_archived'] ?? 0) === 1) {
+                $error = 'This account is already archived.';
+            } else {
+                $archiveStmt = $pdo->prepare('UPDATE users SET is_archived = 1, is_active = 0, archived_reason = :reason WHERE id = :id');
+                $archiveStmt->execute([
+                    ':reason' => 'Archived by Super Admin',
+                    ':id' => $userId,
+                ]);
+
+                logSystemActivity($pdo, (int) $_SESSION['user']['id'], 'Archived user account ID ' . $userId);
+                $success = 'Account archived successfully.';
             }
         }
     } else {
@@ -100,7 +129,7 @@ $search = trim((string) ($_GET['search'] ?? ''));
 $filterRole = trim((string) ($_GET['role'] ?? ''));
 $filterStatus = trim((string) ($_GET['status'] ?? ''));
 
-$sql = 'SELECT id, fullname, email, grade_level, role, is_active, created_at FROM users WHERE 1=1';
+$sql = 'SELECT id, fullname, email, grade_level, role, is_active, is_archived, created_at FROM users WHERE 1=1';
 $params = [];
 
 if ($search !== '') {
@@ -127,6 +156,7 @@ $initials     = makeInitials($currentUser);
 $sidebarLinks = [
     ['href' => 'dashboard.php',   'label' => 'Dashboard',    'active' => false],
     ['href' => 'manage-users.php','label' => 'Manage Users', 'active' => true],
+    ['href' => 'manage-archived-accounts.php','label' => 'Archived Accounts', 'active' => false],
     ['href' => 'system-logs.php', 'label' => 'System Logs',  'active' => false],
     ['href' => 'settings.php',    'label' => 'Settings',     'active' => false],
 ];
@@ -251,7 +281,14 @@ adminPageStart('Manage Users', 'Super Admin / Manage Users', $sidebarLinks, 'Sup
                     </td>
                     <td class="text-muted text-sm"><?php echo e($user['created_at']); ?></td>
                     <td>
-                        <button class="btn btn-primary btn-sm" type="submit">Save</button>
+                        <div class="d-flex gap-2" style="flex-wrap:wrap;">
+                            <button class="btn btn-primary btn-sm" type="submit" name="action" value="update_user">Save</button>
+                            <?php if ((int) $user['is_archived'] === 1): ?>
+                                <span class="badge badge-muted">Archived</span>
+                            <?php else: ?>
+                                <button class="btn btn-danger btn-sm" type="submit" name="action" value="archive_user" onclick="return confirm('Archive this account?');">Archive</button>
+                            <?php endif; ?>
+                        </div>
                     </td>
                 </form>
                 <?php else: ?>

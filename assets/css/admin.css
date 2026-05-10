@@ -63,7 +63,7 @@
     --input-radius: 8px;
 }
 
-html { font-size: 14px; }
+html { font-size: 17px; }
 
 body {
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
@@ -108,8 +108,8 @@ body {
     text-decoration: none;
 }
 .sidebar-brand-icon {
-    width: 36px;
-    height: 36px;
+    width: 54px;
+    height: 54px;
     background: linear-gradient(135deg, var(--brand-500), var(--brand-700));
     border-radius: 9px;
     display: flex;
@@ -126,13 +126,13 @@ body {
     line-height: 1.2;
 }
 .sidebar-brand-title {
-    font-size: .8rem;
+    font-size: 1.15rem;
     font-weight: 700;
     color: #f1f5f9;
     letter-spacing: .01em;
 }
 .sidebar-brand-sub {
-    font-size: .68rem;
+    font-size: .92rem;
     color: var(--sidebar-text);
 }
 
@@ -700,6 +700,141 @@ body {
 }
 .empty-state-title { font-size: .9rem; font-weight: 600; color: var(--text-secondary); margin-bottom: 4px; }
 .empty-state-desc { font-size: .78rem; color: var(--text-muted); }
+
+/* ── Confirm Modal ───────────────────────────────────────── */
+.confirm-modal {
+    position: fixed;
+    inset: 0;
+    display: none;
+    z-index: 500;
+}
+
+.confirm-modal.open {
+    display: block;
+}
+
+.confirm-modal-backdrop {
+    position: absolute;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.5);
+    z-index: 0;
+}
+
+.confirm-modal-dialog {
+    position: relative;
+    z-index: 1;
+    width: min(520px, calc(100% - 24px));
+    margin: 10vh auto 0;
+    background: #fff;
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(2, 8, 23, 0.22);
+    overflow: hidden;
+}
+
+.confirm-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--card-border);
+}
+
+.confirm-modal-title {
+    margin: 0;
+    font-size: 1rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.confirm-modal-close {
+    border: none;
+    background: transparent;
+    color: var(--text-muted);
+    font-size: 1.2rem;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.confirm-modal-body {
+    padding: 16px;
+}
+
+.confirm-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    padding: 12px 16px 16px;
+    border-top: 1px solid var(--card-border);
+}
+
+body.modal-open {
+    overflow: hidden;
+}
+
+dialog.confirm-dialog {
+    border: none;
+    padding: 0;
+    width: min(520px, calc(100% - 24px));
+    border-radius: 12px;
+    box-shadow: 0 20px 50px rgba(2, 8, 23, 0.28);
+}
+
+dialog.confirm-dialog::backdrop {
+    background: rgba(15, 23, 42, 0.5);
+}
+
+.archive-toolbar {
+    display: grid;
+    grid-template-columns: 1.4fr .8fr .8fr auto;
+    gap: 12px;
+    align-items: end;
+    margin-bottom: 16px;
+}
+
+.archive-toolbar .form-control,
+.archive-toolbar .form-select {
+    width: 100%;
+}
+
+.archive-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;
+    margin-bottom: 16px;
+}
+
+.archive-stat {
+    background: #fff;
+    border: 1px solid var(--card-border);
+    border-radius: 12px;
+    padding: 14px 16px;
+    box-shadow: var(--card-shadow);
+}
+
+.archive-stat-label {
+    font-size: .72rem;
+    text-transform: uppercase;
+    letter-spacing: .06em;
+    color: var(--text-muted);
+    margin-bottom: 4px;
+}
+
+.archive-stat-value {
+    font-size: 1.35rem;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.archive-actions {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.archive-empty-note {
+    padding: 18px 0;
+}
 
 /* ── Overlay for mobile sidebar ───────────────────────────── */
 .sidebar-overlay {
